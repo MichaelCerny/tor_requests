@@ -14,6 +14,7 @@ module Tor
       res, host = "", nil
       self.redirects_made = 0
 
+
       if path
         host = uri_or_host
       else
@@ -23,7 +24,12 @@ module Tor
 
       start_params = start_parameters(uri_or_host, host, port)
       start_socks_proxy(start_params) do |http|
-        request = Net::HTTP::Get.new(path || uri_or_host.path)
+        if uri_or_host.scheme == 'https'
+          http.use_ssl = true
+          http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        end
+        request = Net::HTTP::Get.new(uri_or_host.request_uri)
+
         Tor.configuration.headers.each do |header, value|
           request.delete(header)
           request.add_field(header, value)
@@ -48,6 +54,10 @@ module Tor
 
       start_params = start_parameters(uri_or_host, host, port)
       start_socks_proxy(start_params) do |http|
+        if uri_or_host.scheme == 'https'
+          http.use_ssl = true
+          http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        end
         request = Net::HTTP::Post.new(path)
         request.set_form_data(post_options)
         Tor.configuration.headers.each do |header, value|
